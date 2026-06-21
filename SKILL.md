@@ -13,7 +13,7 @@ Update the `.commit` file with a commit message for the current changes.
 2. Run `git diff --cached --stat` to see a summary of staged changes
 3. Run `git diff --cached` to understand staged changes when needed
 4. Run `git log --oneline -3` to see recent commit message style
-5. Read `.commit` to see the current format
+5. Read `.commit` only as an existing draft. Do not treat it as the format authority; the rules in this file and the validator are authoritative.
 6. Write `.commit` using the required Racket datum format
 7. If `racket` is available in the current environment, run:
    ```sh
@@ -38,11 +38,12 @@ Update the `.commit` file with a commit message for the current changes.
 - If there are no staged changes, describe the current modified/untracked files from `git status --short` and `git diff --stat`
 - **Only describe files that appear in the relevant status/diff source** — never mention files that are not modified or staged as applicable
 - `.commit` must contain exactly one readable Racket datum; do not write a free-form commit message
+- If an existing `.commit` uses an old or invalid shape, replace it instead of preserving that shape
 - Datum format is:
   ```
   (TYPE "short title"
 
-  (feature ...)
+  ()
   "detail info"
   )
   ```
@@ -50,8 +51,7 @@ Update the `.commit` file with a commit message for the current changes.
   ```racket
   (FEAT "Update Racket packaging"
 
-  (feature "move brew source generation into package-racket"
-           "include sandbox-lib in the brew minimal profile")
+  ()
   "Regenerate the source archive from package-racket and update the tap formula.
 
   Modified:
@@ -62,11 +62,14 @@ Update the `.commit` file with a commit message for the current changes.
   ```
 - TYPE is one of: FEAT, FIX, REFACTOR, TEST, DOCS, BUILD
 - **标题必须简短**（≤50 字符），只写做了什么，不写细节。细节放 description
-- The `(feature ...)` form is required. Its head symbol must be exactly `feature`; use concise strings for entries unless a symbol is clearer.
+- The third field is required and must be a feature metadata list. Prefer `()` by default. It is an extension point for scenario-specific metadata, so do not impose a fixed internal shape.
+- Do not write a literal `(feature ...)` form in the third field. That notation was meta-syntax, not the datum shape.
+- For commits generated programmatically by scripts, CI, or other automation, the metadata list may include scenario tags such as `(CI ...)`.
+- Do not add metadata only because an LLM helped draft `.commit`; the user will add that metadata explicitly when needed.
 - `"detail info"` is a required string. It should explain the change, include any important safety/verification notes, and include the required `Modified:` list.
 - The final closing parenthesis belongs on its own line after the detail string.
 - When staged changes exist, the "Modified:" section must list exactly the files from `git diff --cached --name-only`
 - When no staged changes exist, the "Modified:" section must list exactly the modified/untracked files from `git status --short`
 - Compiled binaries and build artifacts should NOT be mentioned
 - Keep it concise — no padding, no speculation about intent
-- Before writing `.commit`, mentally validate the datum shape as `(TYPE string (feature ...) string)` and make sure the file can be parsed as a single Racket datum
+- Before writing `.commit`, mentally validate the datum shape as `(TYPE string list string)` and make sure the file can be parsed as a single Racket datum

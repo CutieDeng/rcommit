@@ -34,16 +34,10 @@
        (raise-user-error 'commit-message "message must contain exactly one Racket datum"))
      datum)))
 
-(define (feature-entry? value)
-  (or (string? value)
-      (symbol? value)))
-
-(define (feature-form? value)
-  (match value
-    [(list-rest 'feature entries)
-     (and (pair? entries)
-          (andmap feature-entry? entries))]
-    [_ #f]))
+(define (feature-info-list? value)
+  (and (list? value)
+       (not (and (pair? value)
+                 (eq? (car value) 'feature)))))
 
 (define (valid-title? value)
   (and (string? value)
@@ -56,10 +50,10 @@
 
 (define (valid-commit-datum? value)
   (match value
-    [(list type title features detail)
+    [(list type title feature-info detail)
      (and (memq type allowed-types)
           (valid-title? title)
-          (feature-form? features)
+          (feature-info-list? feature-info)
           (valid-detail? detail))]
     [_ #f]))
 
@@ -69,11 +63,11 @@
     (eprintln "")
     (eprintln "(FEAT \"title\"")
     (eprintln "")
-    (eprintln "(feature ...)")
+    (eprintln "()")
     (eprintln "\"detail info\"")
     (eprintln ")")
     (eprintln "")
-    (eprintln "Rules: TYPE in FEAT/FIX/REFACTOR/TEST/DOCS/BUILD, title <= 50 chars, feature form required, detail must contain Modified:.")
+    (eprintln "Rules: TYPE in FEAT/FIX/REFACTOR/TEST/DOCS/BUILD, title <= 50 chars, third field must be a metadata list, do not write literal (feature ...), detail must contain Modified:.")
   ))
 
 (command-line
